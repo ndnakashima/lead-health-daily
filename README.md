@@ -4,7 +4,7 @@ A one-page morning dashboard that tells marketing and sales leaders whether yest
 
 ![Lead Health – Daily dashboard](screenshot.png)
 
-**[Open the live demo](#)** · Runs entirely in the browser on generated sample data.
+**[Open the live demo]([#](https://ndnakashima.github.io/lead-health-daily/))** · Runs entirely in the browser on generated sample data.
 
 ## The problem
 
