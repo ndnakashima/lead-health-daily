@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lead Health – Daily</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #EEF1F4;
+    --surface: #FFFFFF;
+    --ink: #1C2430;
+    --muted: #5B6878;
+    --rule: #D3DAE2;
+    --good: #0F6B63;
+    --good-bg: #E0F0EC;
+    --bad: #9A3557;
+    --bad-bg: #F6E5EC;
+    --focus: #2F5BD3;
+    color-scheme: light;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #131920;
+      --surface: #1C242E;
+      --ink: #E6EBF1;
+      --muted: #9AA7B6;
+      --rule: #313D4B;
+      --good: #6CC7BA;
+      --good-bg: #1D3633;
+      --bad: #E893B1;
+      --bad-bg: #3B2431;
+      --focus: #8EA9FF;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #131920;
+    --surface: #1C242E;
+    --ink: #E6EBF1;
+    --muted: #9AA7B6;
+    --rule: #313D4B;
+    --good: #6CC7BA;
+    --good-bg: #1D3633;
+    --bad: #E893B1;
+    --bad-bg: #3B2431;
+    --focus: #8EA9FF;
+    color-scheme: dark;
+  }
+  *, *::before, *::after { box-sizing: inherit; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 400 16px/1.5 "Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 1000px; margin: 0 auto; padding: 40px 24px 64px; }
+
+  .top { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; }
+  h1 { font-size: 1rem; font-weight: 600; margin: 0; }
+  .daynav { display: flex; gap: 8px; align-items: center; }
+  button, select {
+    font: inherit; font-size: .9375rem; color: var(--ink);
+    background: var(--surface); border: 1px solid var(--rule);
+    border-radius: 6px; padding: 6px 10px; cursor: pointer;
+  }
+  button:disabled { opacity: .4; cursor: default; }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  .brief {
+    font-family: "Newsreader", Georgia, "Times New Roman", serif;
+    font-size: clamp(1.5rem, 3.4vw, 2.25rem);
+    line-height: 1.28;
+    max-width: 34ch;
+    margin: 48px 0 12px;
+  }
+  .asof { color: var(--muted); font-size: .9375rem; margin: 0; max-width: 68ch; }
+
+  section { margin-top: 56px; }
+  h2 { font-size: 1.125rem; font-weight: 600; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: .875rem; margin: 0 0 16px; max-width: 68ch; }
+
+  .scroll { overflow-x: auto; border-radius: 8px; background: var(--surface); }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { padding: 12px 16px; text-align: right; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  thead th { font-size: .8125rem; font-weight: 500; color: var(--muted); }
+  tbody tr:last-child > * { border-bottom: 0; }
+  td.day { font-weight: 600; }
+  .name { font-weight: 500; }
+  .note { display: block; color: var(--muted); font-size: .8125rem; font-weight: 400; }
+
+  .delta { display: inline-block; min-width: 5.2em; padding: 2px 8px; border-radius: 999px; text-align: center; }
+  .delta.flat { color: var(--muted); }
+  .delta.good { color: var(--good); }
+  .delta.bad { color: var(--bad); }
+  .delta.flag.good { background: var(--good-bg); font-weight: 600; }
+  .delta.flag.bad { background: var(--bad-bg); font-weight: 600; }
+
+  .spark { width: 128px; }
+  .spark svg { display: block; margin-left: auto; overflow: visible; }
+  .spark .line { fill: none; stroke: var(--muted); stroke-width: 1.5; stroke-linejoin: round; }
+  .spark .dot { fill: var(--ink); }
+
+  details { margin-top: 56px; max-width: 72ch; }
+  summary { cursor: pointer; font-weight: 600; font-size: 1.125rem; }
+  dl { margin: 8px 0 0; }
+  dt { font-weight: 600; margin-top: 18px; }
+  dd { margin: 4px 0 0; color: var(--muted); }
+
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  footer { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--rule); color: var(--muted); font-size: .8125rem; max-width: 72ch; }
+
+  @media (max-width: 560px) {
+    main { padding: 24px 16px 48px; }
+    .brief { margin-top: 32px; }
+    th, td { padding: 10px 12px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header class="top">
+    <h1>Lead health, daily</h1>
+    <nav class="daynav" aria-label="Choose a day">
+      <button type="button" id="prev" aria-label="Previous day">‹</button>
+      <label class="sr" for="daypick">Day</label>
+      <select id="daypick"></select>
+      <button type="button" id="next" aria-label="Next day">›</button>
+    </nav>
+  </header>
+
+  <p class="brief" id="brief" aria-live="polite"></p>
+  <p class="asof" id="asof"></p>
+
+  <section aria-labelledby="funnel-h">
+    <h2 id="funnel-h">Funnel</h2>
+    <p class="sub">Each stage for the day, against the average of the 7 and 30 days before it. Shaded changes are past the alert threshold.</p>
+    <div class="scroll"><table id="funnel"></table></div>
+  </section>
+
+  <section aria-labelledby="quality-h">
+    <h2 id="quality-h">Speed and quality</h2>
+    <p class="sub">Rates compare in percentage points. Response time compares in percent, and lower is better.</p>
+    <div class="scroll"><table id="quality"></table></div>
+  </section>
+
+  <section aria-labelledby="sources-h">
+    <h2 id="sources-h">Form fills by source</h2>
+    <p class="sub">Where the day’s leads came from, and which channels moved.</p>
+    <div class="scroll"><table id="sources"></table></div>
+  </section>
+
+  <details>
+    <summary>How each number is counted</summary>
+    <dl id="defs"></dl>
+  </details>
+
+  <footer>
+    Sample data. Every number on this page is generated in the browser from a fixed seed, so nothing here describes real people or a real company. The dashboard reads aggregate daily counts only and never touches contact-level records.
+  </footer>
+</main>
+
+<script>
+/* ---------- Settings ---------- */
+const CONFIG = {
+  endDate: "2026-11-16",   // last day of sample data
+  historyDays: 120,        // days of sample data to generate
+  pctThreshold: 0.15,      // flag counts and times that move 15% or more vs. the 7-day average
+  ptsThreshold: 5,         // flag rates that move 5 percentage points or more
+  minCountChange: 3        // ignore swings of fewer than 3 on small counts (2 deals vs. 3 is noise)
+};
+
+const SOURCES = [
+  { name: "Paid social", share: 0.38 },
+  { name: "Paid search", share: 0.21 },
+  { name: "Organic search", share: 0.19 },
+  { name: "Email", share: 0.14 },
+  { name: "Referral", share: 0.08 }
+];
+
+/* ---------- Data layer ----------
+   In production this function is replaced by a pull of daily aggregate
+   counts from the CRM. Everything below it only expects an array of days
+   shaped like the objects returned here. */
+function loadDays() {
+  return generateSampleDays();
+}
+
+function mulberry32(seed) {
+  return function () {
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function generateSampleDays() {
+  const rand = mulberry32(20261116);
+  const noise = sd => { let s = 0; for (let i = 0; i < 6; i++) s += rand(); return (s - 3) * sd * 1.414; };
+  const end = new Date(CONFIG.endDate + "T12:00:00");
+  const n = CONFIG.historyDays;
+  const days = [];
+
+  for (let idx = 0; idx < n; idx++) {
+    const d = new Date(end);
+    d.setDate(end.getDate() - (n - 1 - idx));
+    const weekend = d.getDay() === 0 || d.getDay() === 6;
+    const progress = idx / n;
+    const isLast = idx === n - 1;
+
+    let base = 104 + 26 * progress;
+    if (weekend) base *= 0.8;
+
+    const sources = {};
+    let formFills = 0;
+    SOURCES.forEach(s => {
+      let lift = 1;
+      if (s.name === "Paid social" && (isLast || idx === n - 23)) lift = 1.5;
+      if (s.name === "Email" && idx % 14 === 3) lift = 1.9;
+      if (s.name === "Paid search" && idx === n - 9) lift = 0.45;
+      const v = Math.max(0, Math.round(base * s.share * lift * (1 + noise(0.1))));
+      sources[s.name] = v;
+      formFills += v;
+    });
+
+    const qualified = Math.round(formFills * (0.46 + noise(0.025)));
+    const booked = Math.round(qualified * (0.31 + noise(0.025)));
+    const scheduled = idx < 2
+      ? Math.round(booked * 0.95)
+      : Math.max(1, Math.round((days[idx - 2].booked * 0.6 + days[idx - 1].booked * 0.4) * (1 + noise(0.05))));
+    let show = 0.72 + noise(0.025);
+    if (isLast) show = 0.6;
+    if (idx === n - 16) show = 0.84;
+    const held = Math.round(scheduled * show);
+    const won = Math.round(held * (0.24 + noise(0.035)));
+    let responseHours = 16 - 5 * progress + noise(1.2) + (weekend ? 5 : 0);
+    responseHours = Math.max(3, Math.round(responseHours * 10) / 10);
+
+    days.push({
+      date: d.toISOString().slice(0, 10),
+      sources, formFills, qualified, booked, scheduled, held, won, responseHours
+    });
+  }
+  return days;
+}
+
+/* ---------- Metric definitions ---------- */
+const COUNT_METRICS = [
+  { key: "formFills", label: "Form fills", be: "were", note: "New leads, any form",
+    def: "New leads created from any lead form that day, deduplicated so a person who submits twice counts once." },
+  { key: "qualified", label: "Qualified leads", be: "were", note: "Met the score threshold",
+    def: "Leads created that day that reached the lead score threshold for sales follow-up." },
+  { key: "booked", label: "Meetings booked", be: "were", note: "Booked that day",
+    def: "Sales meetings booked that day, counted by booking date, whenever the meeting itself is scheduled." },
+  { key: "held", label: "Meetings held", be: "were", note: "Happened that day",
+    def: "Meetings scheduled for that day that the rep marked as completed." },
+  { key: "won", label: "Deals won", be: "were", note: "Closed that day",
+    def: "Deals moved to closed won that day." }
+];
+
+const RATE_METRICS = [
+  { label: "Show rate", be: "was", type: "rate", better: "up",
+    num: d => d.held, den: d => d.scheduled,
+    def: "Meetings held divided by meetings scheduled for the same day. Averages pool the days, so a slow day doesn’t count as much as a busy one." },
+  { label: "Qualification rate", be: "was", type: "rate", better: "up",
+    num: d => d.qualified, den: d => d.formFills,
+    def: "Qualified leads divided by form fills for the same day." },
+  { label: "Median response time", be: "was", type: "hours", better: "down",
+    value: d => d.responseHours,
+    def: "The median hours from a form fill to the first logged sales touch. The 7- and 30-day figures average the daily medians." }
+];
+
+/* ---------- Math ---------- */
+const sum = (arr, f) => arr.reduce((a, d) => a + f(d), 0);
+const mean = (arr, f) => arr.length ? sum(arr, f) / arr.length : 0;
+
+function windowFor(days, i, len) { return days.slice(Math.max(0, i - len), i); }
+
+function countRow(days, i, m) {
+  const f = d => d[m.key];
+  const v = f(days[i]);
+  const a7 = mean(windowFor(days, i, 7), f);
+  const a30 = mean(windowFor(days, i, 30), f);
+  return { m, v, a7, a30, d7: rel(v, a7), d30: rel(v, a30), kind: "pct", better: "up", abs7: v - a7, abs30: v - a30,
+           series: days.slice(i - 29, i + 1).map(f) };
+}
+
+function rateRow(days, i, m) {
+  if (m.type === "hours") {
+    const v = m.value(days[i]);
+    const a7 = mean(windowFor(days, i, 7), m.value);
+    const a30 = mean(windowFor(days, i, 30), m.value);
+    return { m, v, a7, a30, d7: rel(v, a7), d30: rel(v, a30), kind: "pct", better: m.better,
+             series: days.slice(i - 29, i + 1).map(m.value) };
+  }
+  const pooled = arr => { const den = sum(arr, m.den); return den ? sum(arr, m.num) / den : 0; };
+  const v = pooled([days[i]]);
+  const a7 = pooled(windowFor(days, i, 7));
+  const a30 = pooled(windowFor(days, i, 30));
+  return { m, v, a7, a30, d7: (v - a7) * 100, d30: (v - a30) * 100, kind: "pts", better: m.better,
+           series: days.slice(i - 29, i + 1).map(d => pooled([d])) };
+}
+
+function rel(v, avg) { return avg ? (v - avg) / avg : 0; }
+
+function judge(delta, kind, better, absDiff) {
+  const size = kind === "pts" ? Math.abs(delta) : Math.abs(delta) * 100;
+  const flagLimit = kind === "pts" ? CONFIG.ptsThreshold : CONFIG.pctThreshold * 100;
+  if (size < (kind === "pts" ? 1 : 3)) return { tone: "flat", flag: false };
+  const good = better === "up" ? delta > 0 : delta < 0;
+  const bigEnough = absDiff === undefined || Math.abs(absDiff) >= CONFIG.minCountChange;
+  return { tone: good ? "good" : "bad", flag: size >= flagLimit && bigEnough };
+}
+
+/* ---------- Formatting ---------- */
+const nf = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
+const nf1 = new Intl.NumberFormat("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const MINUS = "\u2212";
+
+function fmtValue(row, v) {
+  if (row.m.type === "rate") return Math.round(v * 100) + "%";
+  if (row.m.type === "hours") return nf1.format(v) + " h";
+  return nf.format(v);
+}
+
+function fmtAvg(row, v) {
+  return row.m.type ? fmtValue(row, v) : nf1.format(v);
+}
+
+function fmtDelta(delta, kind) {
+  const sign = delta > 0 ? "+" : delta < 0 ? MINUS : "";
+  return kind === "pts"
+    ? sign + Math.abs(delta).toFixed(0) + " pts"
+    : sign + Math.abs(delta * 100).toFixed(0) + "%";
+}
+
+function deltaCell(delta, kind, better, absDiff) {
+  const j = judge(delta, kind, better, absDiff);
+  const meaning = j.tone === "flat" ? "about the same" : j.tone === "good" ? "better than usual" : "worse than usual";
+  return `<span class="delta ${j.tone}${j.flag ? " flag" : ""}" title="${meaning}">${fmtDelta(delta, kind)}` +
+         `<span class="sr">, ${meaning}${j.flag ? ", past alert threshold" : ""}</span></span>`;
+}
+
+function sparkline(series, label) {
+  const w = 120, h = 28, pad = 3;
+  const min = Math.min(...series), max = Math.max(...series);
+  const span = max - min || 1;
+  const pts = series.map((v, k) => [
+    (k / (series.length - 1)) * w,
+    h - pad - ((v - min) / span) * (h - pad * 2)
+  ]);
+  const path = pts.map(p => p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ");
+  const last = pts[pts.length - 1];
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${label}, last 30 days">` +
+         `<polyline class="line" points="${path}"/><circle class="dot" cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="2.5"/></svg>`;
+}
+
+const longDate = iso => new Date(iso + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+const shortDate = iso => new Date(iso + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+const headDate = iso => new Date(iso + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+
+/* ---------- Morning summary ----------
+   Rule-based so the demo runs without an API key. */
+function buildBrief(fills, others, sourceRows) {
+  const sentences = [];
+  const fj = judge(fills.d7, "pct", "up");
+
+  let first = `Form fills came in at ${nf.format(fills.v)}, `;
+  if (fj.tone === "flat") first += "right in line with the 7-day average";
+  else first += `${Math.abs(fills.d7 * 100).toFixed(0)}% ${fills.d7 > 0 ? "above" : "below"} the 7-day average`;
+
+  const mover = sourceRows
+    .filter(s => s.flag && Math.sign(s.d7) === Math.sign(fills.d7) && fj.tone !== "flat")
+    .sort((a, b) => Math.abs(b.v - b.a7) - Math.abs(a.v - a.a7))[0];
+  if (mover) first += `, ${fills.d7 > 0 ? "led" : "dragged down"} by ${mover.name.toLowerCase()}`;
+  sentences.push(first + ".");
+
+  const flagged = others
+    .map(r => ({ r, j: judge(r.d7, r.kind, r.better, r.abs7) }))
+    .filter(x => x.j.flag)
+    .sort((a, b) => (a.j.tone === "bad" ? 0 : 1) - (b.j.tone === "bad" ? 0 : 1));
+
+  flagged.slice(0, 2).forEach(({ r, j }, k) => {
+    const amount = r.kind === "pts"
+      ? `${Math.abs(r.d7).toFixed(0)} points`
+      : `${Math.abs(r.d7 * 100).toFixed(0)}%`;
+    const dir = r.d7 > 0 ? "above" : "below";
+    const verb = j.tone === "bad"
+      ? (r.better === "up" ? (k ? "fell to" : "slipped to") : "rose to")
+      : (r.better === "up" ? (k ? "reached" : "climbed to") : "dropped to");
+    const shown = r.m.type === "hours" ? `${nf1.format(r.v)} hours` : fmtValue(r, r.v);
+    sentences.push(`${r.m.label} ${verb} ${shown}, ${amount} ${dir} the week.`);
+  });
+
+  sentences.push(flagged.length ? "Everything else is within normal range." : "Every other stage is within normal range.");
+  return sentences.join(" ");
+}
+
+/* ---------- Render ---------- */
+const DAYS = loadDays();
+const FIRST = 30;                 // need 30 prior days for the 30-day average
+let current = DAYS.length - 1;
+
+function render() {
+  const day = DAYS[current];
+  const head = headDate(day.date);
+
+  const countRows = COUNT_METRICS.map(m => countRow(DAYS, current, m));
+  const rateRows = RATE_METRICS.map(m => rateRow(DAYS, current, m));
+
+  const theadRow = `<thead><tr><th scope="col">Metric</th><th scope="col">${head}</th><th scope="col">7-day avg</th><th scope="col">30-day avg</th><th scope="col">vs 7-day</th><th scope="col">vs 30-day</th><th scope="col"><span class="sr">Trend, </span>Last 30 days</th></tr></thead>`;
+
+  const bodyRows = rows => rows.map(r => `<tr>
+      <th scope="row"><span class="name">${r.m.label}</span>${r.m.note ? `<span class="note">${r.m.note}</span>` : ""}</th>
+      <td class="day">${fmtValue(r, r.v)}</td>
+      <td>${fmtAvg(r, r.a7)}</td>
+      <td>${fmtAvg(r, r.a30)}</td>
+      <td>${deltaCell(r.d7, r.kind, r.better, r.abs7)}</td>
+      <td>${deltaCell(r.d30, r.kind, r.better, r.abs30)}</td>
+      <td class="spark">${sparkline(r.series, r.m.label)}</td>
+    </tr>`).join("");
+
+  document.getElementById("funnel").innerHTML = theadRow + `<tbody>${bodyRows(countRows)}</tbody>`;
+  document.getElementById("quality").innerHTML = theadRow + `<tbody>${bodyRows(rateRows)}</tbody>`;
+
+  const sourceRows = SOURCES.map(s => {
+    const f = d => d.sources[s.name];
+    const v = f(day);
+    const a7 = mean(windowFor(DAYS, current, 7), f);
+    const d7 = rel(v, a7);
+    return { name: s.name, v, a7, d7, share: day.formFills ? v / day.formFills : 0, flag: judge(d7, "pct", "up", v - a7).flag };
+  });
+
+  document.getElementById("sources").innerHTML =
+    `<thead><tr><th scope="col">Source</th><th scope="col">${head}</th><th scope="col">7-day avg</th><th scope="col">vs 7-day</th><th scope="col">Share of day</th></tr></thead><tbody>` +
+    sourceRows.map(s => `<tr><th scope="row"><span class="name">${s.name}</span></th><td class="day">${nf.format(s.v)}</td><td>${nf1.format(s.a7)}</td><td>${deltaCell(s.d7, "pct", "up", s.v - s.a7)}</td><td>${Math.round(s.share * 100)}%</td></tr>`).join("") +
+    `</tbody>`;
+
+  const fillsRow = countRows[0];
+  document.getElementById("brief").textContent = buildBrief(fillsRow, [...countRows.slice(1), ...rateRows], sourceRows);
+  document.getElementById("asof").textContent = `${longDate(day.date)}, compared with the 7 and 30 days before it.`;
+
+  document.getElementById("daypick").value = String(current);
+  document.getElementById("prev").disabled = current <= FIRST;
+  document.getElementById("next").disabled = current >= DAYS.length - 1;
+}
+
+function setup() {
+  const pick = document.getElementById("daypick");
+  for (let i = DAYS.length - 1; i >= FIRST; i--) {
+    const o = document.createElement("option");
+    o.value = String(i);
+    o.textContent = shortDate(DAYS[i].date);
+    pick.appendChild(o);
+  }
+  pick.addEventListener("change", e => { current = Number(e.target.value); render(); });
+  document.getElementById("prev").addEventListener("click", () => { if (current > FIRST) { current--; render(); } });
+  document.getElementById("next").addEventListener("click", () => { if (current < DAYS.length - 1) { current++; render(); } });
+
+  document.getElementById("defs").innerHTML = [...COUNT_METRICS, ...RATE_METRICS]
+    .map(m => `<dt>${m.label}</dt><dd>${m.def}</dd>`).join("") +
+    `<dt>Alerts</dt><dd>A change is shaded when it moves ${CONFIG.pctThreshold * 100}% or more against the 7-day average, or ${CONFIG.ptsThreshold} points or more for a rate. Green means better than usual and red means worse, so a drop in response time shows green.</dd>`;
+
+  render();
+}
+
+setup();
+</script>
+</body>
+</html>
